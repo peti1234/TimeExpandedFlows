@@ -253,7 +253,7 @@ int main()
 
     //cout << "csucsok szama: ";
     cin >> n;
-    //n=5;
+    //n=10;
     //cout << "\n";
 
     //cout << "ido: ";
@@ -261,9 +261,9 @@ int main()
     //t=20;
     //cout << "\n";
 
-    double lim;
+    //double lim=1;
     //cout << "elvart pontossag: ";
-    cin >> lim;
+    //cin >> lim;
     //cout << "\n";
 
     if (local_test) {
@@ -272,6 +272,7 @@ int main()
 
     calc_flow(1, 1, 0);
     calc_flow(1, 1, 1);
+    return 0;
     calc_flow(1, 0.8, 0);
     calc_flow(1, 0.8, 1);
     calc_flow(1, 0.2, 0);
@@ -327,11 +328,11 @@ szakaszosan konstans fuggvenyek vannak,
 ha ezeket vegigmegyek, akkor mi tortenik a vegen
 
 
-Két egymás követõ élre mi történik? (klasszikus becslések, minél finomabb felosztások)
+KÃ©t egymÃ¡s kÃ¶vetÃµ Ã©lre mi tÃ¶rtÃ©nik? (klasszikus becslÃ©sek, minÃ©l finomabb felosztÃ¡sok)
 
-Nem akkor osztom fel, ha az integrál nagy.
-Veszem az alsó és felsõ becslésre a folyamot, ha egy élen nagy az eltérés, akkor körülötte kell felosztani
+Nem akkor osztom fel, ha az integrÃ¡l nagy.
+Veszem az alsÃ³ Ã©s felsÃµ becslÃ©sre a folyamot, ha egy Ã©len nagy az eltÃ©rÃ©s, akkor kÃ¶rÃ¼lÃ¶tte kell felosztani
 
-Minden felosztás legyen az elõzõ finomítása
+Minden felosztÃ¡s legyen az elÃµzÃµ finomÃ­tÃ¡sa
 
 */

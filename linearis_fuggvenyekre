@@ -1,0 +1,230 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+const int maxn=1005;
+const double eps=1e-6, inf=1e9;
+struct line {
+    double l, r, x, y;
+    bool operator<(const line& other) const {
+        return l<other.l;
+    }
+};
+line close={inf+1, inf+1, 0, 0};
+
+int n;
+vector<int> adj[maxn];
+vector<line> graph[maxn][maxn];
+
+double ans;
+
+
+
+double get_integral(vector<line> &v) {
+    double ans;
+    for (auto p:v) {
+        ans+=(p.x+p.y)*(p.r-p.l)/2;
+    }
+    return ans;
+}
+double get_priority(vector<line> v) {
+    return get_integral(v); // valami bonyolultabb is lehetne
+}
+double eval(line a, double pos) {
+    double la=a.l, ra=a.r, xa=a.x, ya=a.y;
+    if (la-ra<eps) {
+        return 0;
+    }
+    double res=(ra-pos)*xa+(pos-la)*ya/(ra-la);
+    return res;
+}
+vector<line> combine(vector<line> a, vector<line> b) {
+    // TODO
+    double buffer=0;
+    vector<line> res;
+
+    int sa=a.size(), sb=b.size();
+    a.push_back(close), b.push_back(close);
+    int i=0, j=0;
+    while (i<sa || j<sb) {
+        double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
+        double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
+        if (abs(la-ra)<eps) {
+            // bonyolult resz
+
+            // ket reszre bontas, hol nagyobb az elso es hol a masodik
+            // ha az elso a nagyobb, akkor novekszik az integral es a masodik vonalat megkapja
+            // ha a masodik nagyobb, kiszamolom meddig tart az elonye, addig az marad, onnantol az elso vonala
+        }
+        else if (la<ra) {
+            // integralhoz hozza kell adni a maradekot
+        }
+        else {
+            // addig kell kivalasztani, amig belefer a limitbe
+        }
+    }
+
+    return a;
+}
+vector<line> find_next(vector<line> a, vector<line> b) {
+    // ugyanaz, mint a combine
+    return combine(a, b);
+    //return a;
+}
+void mirror(vector<line> &a) {
+    int si=a.size();
+    for (int i=0; i<si; i++) {
+        int l=a[i].l, r=a[i].r;
+        a[i].l=-r, a[i].r=-l;
+    }
+    reverse(a.begin(), a.end());
+}
+vector<line> find_prev(vector<line> a, vector<line> b) {
+    // ugyanaz, mint a combine, csak valahogy visszafele kell haladni
+    mirror(a);
+    mirror(b);
+    vector<line> res=combine(b, a);
+    mirror(res);
+    //return a;
+}
+void modify(vector<line> a, vector<line> b, int val) {
+    // TODO
+    vector<line> res;
+    int sa=a.size(), sb=b.size();
+    a.push_back(close), b.push_back(close);
+    if (val==-1) {
+        for (int i=0; i<sb; i++) {
+            b[i].x*=-1;
+            b[i].y*=-1;
+        }
+    }
+    int i=0, j=0;
+    while (i<sa || j<sb) {
+        double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
+        double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
+
+        if (abs(la-lb)<eps) {
+            if (abs(ra-rb)<eps) {
+                res.push_back({ra, rb, xa+xb, ya+yb});
+                i++;
+                j++;
+            }
+            else if (ra>rb) {
+                double midval=eval(a[i], rb);
+                res.push_back({lb, rb, xa+xb, midval+yb});
+                a[i]={rb, ra, midval, ya};
+                j++;
+            }
+            else {
+                double midval=eval(b[j], ra);
+                res.push_back({la, ra, xa+xb, midval+xb});
+                b[j]={ra, rb, midval, yb};
+                i++;
+            }
+        }
+        else if (la<lb) {
+            if (ra<=lb) {
+                res.push_back(a[i]);
+                i++;
+            } else {
+                double midval=eval(a[i], lb);
+                res.push_back({la, lb, xa, midval});
+                a[i]={la, ra, midval, ya};
+            }
+        }
+        else {
+            assert(la>lb);
+            assert(val==1);
+            if (rb<=la) {
+                res.push_back(b[j]);
+                j++;
+            } else {
+                double midval=eval(b[j], la);
+                res.push_back({lb, la, xb, midval});
+                b[j]={lb, rb, midval, yb};
+            }
+        }
+    }
+    return;
+}
+
+int main()
+{
+    cin >> n;
+    int linecnt;
+    cin >> linecnt;
+    for (int i=1; i<=linecnt; i++) {
+        int a, b;
+        cin >> a >> b;
+        if (graph[a][b].size()==0) {
+            adj[a].push_back(b), adj[b].push_back(a);
+        }
+        double l, r, x, y;
+        cin >> l >> r >> x >> y;
+        graph[a][b].push_back({l, r, x, y});
+        graph[b][a].push_back({l, r, x, y});
+    }
+
+    // beolvasas
+
+    while (true) {
+        vector<bool> is_visited(n+1, 0);
+        vector<int> prev(n+1, 0);
+        priority_queue<pair<long double, int> > ord;
+        vector<vector<line>> f(n+1);
+        line alap={0, inf, inf, inf};
+        vector<line> g={alap};
+        f[1]=g;
+        ord.push({get_priority(f[1]), 1});
+        while (ord.size()>0) {
+            int cur=ord.top().second;
+            ord.pop();
+            if (is_visited[cur]) continue;
+            is_visited[cur]=1;
+            for (auto v:adj[cur]) {
+                if (!is_visited[v]) {
+                    vector<line> opt=combine(f[cur], graph[cur][v]);
+                    if (get_priority(opt)>get_priority(f[v])) {
+                        f[v]=opt;
+                        prev[v]=cur;
+                        ord.push({get_priority(f[v]), v});
+                    }
+                }
+            }
+        }
+
+        if (get_integral(f[n])<eps) { // nagyon kicsi az integral, vagy sok ut, vagy barmi mas
+            break;
+        }
+        vector<int> path;
+        path.push_back(n);
+        int tmp=n;
+        while (tmp!=1) {
+            tmp=prev[tmp];
+            path.push_back(tmp);
+        }
+        int pathlen=path.size();
+        vector<vector<line> > edge_functions(pathlen);
+        edge_functions[pathlen-1]=f[n];
+        for (int i=pathlen-2; i>=1; i--) {
+            edge_functions[i]=find_prev(graph[path[i-1]][path[i]], edge_functions[i+1]);
+        }
+        for (int i=2; i<pathlen; i++) {
+            edge_functions[i]=find_next(graph[path[i-1]][path[i]], edge_functions[i-1]);
+        }
+        ans+=get_integral(f[n]);
+
+        for (int i=1; i<pathlen; i++) {
+            int a=path[i-1], b=path[i];
+            modify(graph[a][b], edge_functions[i], -1);
+            modify(graph[b][a], edge_functions[i], 1);
+        }
+    }
+    return 0;
+}
+/*
+altalanosan
+egy utra mi a legjobb, amit ki tudunk hozni
+egy utra sok ertelmes kerdes
+*/
+
+

@@ -37,6 +37,14 @@ double eval(line a, double pos) {
     double res=(ra-pos)*xa+(pos-la)*ya/(ra-la);
     return res;
 }
+void special_case(double l, double r, double xa, double ya, double xb, double yb, double &buffer, vector<line> &res) {
+    if (xa>=xb) {
+        res.push_back({lb, rb, xb, yb});
+        buffer+=(ra-la)*(xa+ya-xb-yb)/2;
+    } else {
+        // ez meg hianyzik
+    }
+}
 vector<line> combine(vector<line> a, vector<line> b) {
     // TODO
     double buffer=0;
@@ -49,26 +57,75 @@ vector<line> combine(vector<line> a, vector<line> b) {
         double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
         double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
         if (abs(la-ra)<eps) {
-            // bonyolult resz
+            // uj intervallumok, fontos pontok
+            if (abs(lb-rb)<eps) {
+                i++, j++;
+            }
+            else if (ra+eps<rb) {
+                double midval=eval(b[j], ra);
+                b[j]={ra, rb, midval, yb};
+                yb=midval;
+                i++;
+            }
+            else {
+                double midval=eval(a[i], rb);
+                a[i]={rb, ra, midval, ya};
+                ya=midval;
+                j++;
+            }
+            ra=min(ra, rb), rb=min(ra, rb);
 
-            // ket reszre bontas, hol nagyobb az elso es hol a masodik
-            // ha az elso a nagyobb, akkor novekszik az integral es a masodik vonalat megkapja
-            // ha a masodik nagyobb, kiszamolom meddig tart az elonye, addig az marad, onnantol az elso vonala
+            bool p=(xa>=xb), q=(ya>=yb);
+            if (p==q) {
+                special_case(la, ra, xa, ya, xb, yb, buffer, res);
+            } else {
+                double midpoint=la+(xa-xb)/((xa-xb)+(yb-ya))*(ra-la);
+                double midval=xa+(ya-xa)*(midpoint-la)/(ra-la);
+                special_case(la, midpoint, xa, midval, xb, midval, buffer, res);
+                special_case(midpoint, ra, midval, ya, midval, yb, buffer, res);
+            }
         }
-        else if (la<ra) {
+        else if (la<lb) {
             // integralhoz hozza kell adni a maradekot
+            if (ra<=lb) {
+                buffer+=(xa+ya)*(ra-la)/2;
+                i++;
+            } else {
+                double midval=eval(a[i], lb);
+                buffer+=(xa+midval)*(lb-la)/2;
+                a[i]={lb, ra, midval, ya};
+            }
         }
         else {
             // addig kell kivalasztani, amig belefer a limitbe
+            double m=(yb-xb)/(rb-lb);
+            double lo=lb, hi=min(rb, la)+eps, mid;
+            while (hi-lo>eps) {
+                mid=(hi+lo)/2;
+                double area=(xb+xb+m*(mid-lb))*(mid-lb)/2;
+                if (area<=buffer) {
+                    lo=mid;
+                } else {
+                    hi=mid;
+                }
+            }
+            if (lo-ra>eps) {
+                double area=(xb+xb+m*(lo-lb))*(lo-lb)/2;
+                buffer-=area;
+                res.push_back({lb, lo, xb, xb+m*(lo-lb)});
+            }
+            if (la<rb) {
+                double midval=eval(b[j], la);
+                b[j]={la, rb, midval, yb};
+            } else {
+                j++;
+            }
         }
     }
-
-    return a;
+    return res;
 }
 vector<line> find_next(vector<line> a, vector<line> b) {
-    // ugyanaz, mint a combine
     return combine(a, b);
-    //return a;
 }
 void mirror(vector<line> &a) {
     int si=a.size();
@@ -79,15 +136,12 @@ void mirror(vector<line> &a) {
     reverse(a.begin(), a.end());
 }
 vector<line> find_prev(vector<line> a, vector<line> b) {
-    // ugyanaz, mint a combine, csak valahogy visszafele kell haladni
     mirror(a);
     mirror(b);
     vector<line> res=combine(b, a);
     mirror(res);
-    //return a;
 }
 void modify(vector<line> a, vector<line> b, int val) {
-    // TODO
     vector<line> res;
     int sa=a.size(), sb=b.size();
     a.push_back(close), b.push_back(close);
@@ -164,8 +218,6 @@ int main()
         graph[b][a].push_back({l, r, x, y});
     }
 
-    // beolvasas
-
     while (true) {
         vector<bool> is_visited(n+1, 0);
         vector<int> prev(n+1, 0);
@@ -221,10 +273,5 @@ int main()
     }
     return 0;
 }
-/*
-altalanosan
-egy utra mi a legjobb, amit ki tudunk hozni
-egy utra sok ertelmes kerdes
-*/
 
 

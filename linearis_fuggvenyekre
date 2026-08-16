@@ -39,10 +39,11 @@ double eval(line a, double pos) {
 }
 void special_case(double l, double r, double xa, double ya, double xb, double yb, double &buffer, vector<line> &res) {
     if (xa>=xb) {
-        res.push_back({lb, rb, xb, yb});
-        buffer+=(ra-la)*(xa+ya-xb-yb)/2;
+        res.push_back({l, r, xb, yb});
+        buffer+=(r-l)*(xa+ya-xb-yb)/2;
     } else {
         // ez meg hianyzik
+        // nem annyira nehez
     }
 }
 vector<line> combine(vector<line> a, vector<line> b) {
@@ -273,5 +274,10 @@ int main()
     }
     return 0;
 }
+/*
+altalanosan
+egy utra mi a legjobb, amit ki tudunk hozni
+egy utra sok ertelmes kerdes
+*/
 
 

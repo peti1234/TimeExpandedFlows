@@ -9,7 +9,7 @@ struct line {
         return l<other.l;
     }
 };
-line close={inf+1, inf+1, 0, 0};
+line close_line={inf+1, inf+1, 0, 0};
 
 int n;
 vector<int> adj[maxn];
@@ -20,7 +20,7 @@ double ans;
 
 
 double get_integral(vector<line> &v) {
-    double ans;
+    double ans=0;
     for (auto p:v) {
         ans+=(p.x+p.y)*(p.r-p.l)/2;
     }
@@ -31,13 +31,14 @@ double get_priority(vector<line> v) {
 }
 double eval(line a, double pos) {
     double la=a.l, ra=a.r, xa=a.x, ya=a.y;
-    if (la-ra<eps) {
+    if (abs(la-ra)<eps) {
         return 0;
     }
-    double res=(ra-pos)*xa+(pos-la)*ya/(ra-la);
+    double res=((ra-pos)*xa+(pos-la)*ya)/(ra-la);
     return res;
 }
 void special_case(double l, double r, double xa, double ya, double xb, double yb, double &buffer, vector<line> &res) {
+    if (abs(r-l)<eps) return;
     if (xa>=xb) {
         res.push_back({l, r, xb, yb});
         buffer+=(r-l)*(xa+ya-xb-yb)/2;
@@ -65,18 +66,24 @@ void special_case(double l, double r, double xa, double ya, double xb, double yb
 
     }
 }
+void print(vector<line> v) {
+    for (auto p:v) {
+        cout << p.l << " " << p.r << " " << p.x << " " << p.y << "\n";
+    }
+}
 vector<line> combine(vector<line> a, vector<line> b) {
     double buffer=0;
     vector<line> res;
 
     int sa=a.size(), sb=b.size();
-    a.push_back(close), b.push_back(close);
+    a.push_back(close_line), b.push_back(close_line);
     int i=0, j=0;
+
+    int it=0;
     while (i<sa || j<sb) {
         double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
         double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
-        if (abs(la-ra)<eps) {
-            // uj intervallumok, fontos pontok
+        if (abs(la-lb)<eps) {
             if (abs(lb-rb)<eps) {
                 i++, j++;
             }
@@ -93,7 +100,6 @@ vector<line> combine(vector<line> a, vector<line> b) {
                 j++;
             }
             ra=min(ra, rb), rb=min(ra, rb);
-
             bool p=(xa>=xb), q=(ya>=yb);
             if (p==q) {
                 special_case(la, ra, xa, ya, xb, yb, buffer, res);
@@ -149,8 +155,8 @@ vector<line> find_next(vector<line> a, vector<line> b) {
 void mirror(vector<line> &a) {
     int si=a.size();
     for (int i=0; i<si; i++) {
-        int l=a[i].l, r=a[i].r;
-        a[i].l=-r, a[i].r=-l;
+        double ll=a[i].l, rr=a[i].r;
+        a[i].l=-rr, a[i].r=-ll;
     }
     reverse(a.begin(), a.end());
 }
@@ -159,13 +165,14 @@ vector<line> find_prev(vector<line> a, vector<line> b) {
     mirror(b);
     vector<line> res=combine(b, a);
     mirror(res);
+    return res;
 }
 
 
 void modify(vector<line> a, vector<line> b, int val) {
     vector<line> res;
     int sa=a.size(), sb=b.size();
-    a.push_back(close), b.push_back(close);
+    a.push_back(close_line), b.push_back(close_line);
     if (val==-1) {
         for (int i=0; i<sb; i++) {
             b[i].x*=-1;
@@ -203,7 +210,7 @@ void modify(vector<line> a, vector<line> b, int val) {
             } else {
                 double midval=eval(a[i], lb);
                 res.push_back({la, lb, xa, midval});
-                a[i]={la, ra, midval, ya};
+                a[i]={lb, ra, midval, ya};
             }
         }
         else {
@@ -215,7 +222,7 @@ void modify(vector<line> a, vector<line> b, int val) {
             } else {
                 double midval=eval(b[j], la);
                 res.push_back({lb, la, xb, midval});
-                b[j]={lb, rb, midval, yb};
+                b[j]={la, rb, midval, yb};
             }
         }
     }
@@ -223,7 +230,7 @@ void modify(vector<line> a, vector<line> b, int val) {
 }
 
 int main()
-{
+{   
     cin >> n;
     int linecnt;
     cin >> linecnt;
@@ -278,6 +285,7 @@ int main()
         int pathlen=path.size();
         vector<vector<line> > edge_functions(pathlen);
         edge_functions[pathlen-1]=f[n];
+
         for (int i=pathlen-2; i>=1; i--) {
             edge_functions[i]=find_prev(graph[path[i-1]][path[i]], edge_functions[i+1]);
         }
@@ -291,8 +299,31 @@ int main()
             modify(graph[a][b], edge_functions[i], -1);
             modify(graph[b][a], edge_functions[i], 1);
         }
+
+
+        reverse(path.begin(), path.end());
+
+        cout << "ut: ";
+        for (auto x:path) {
+            cout << x << " ";
+        }
+        cout << "\n";
+
+        for (int i=pathlen-1; i>=1; i--) {
+            cout << "lepes\n";
+            print(edge_functions[i]);
+        }
+
+        exit(0);
     }
-    cout << ans << "\n";
     return 0;
 }
-
+// minta: 3 csucs, 3 szakasz
+// elso szakasz 1-bol 2-be (3, 1) es (7, 4) pontok kozott vagyis 4 ideig tart es egyre nagyobb a savszelesseg
+// kiirja az utat (1, 2, 3) es a fuggvenyeket amiken lephetunk
+/*
+3 3
+1 2 3 7 1 4
+1 2 8 10 3 1
+2 3 1 10 2 2
+*/

@@ -42,12 +42,30 @@ void special_case(double l, double r, double xa, double ya, double xb, double yb
         res.push_back({l, r, xb, yb});
         buffer+=(r-l)*(xa+ya-xb-yb)/2;
     } else {
-        // ez meg hianyzik
-        // nem annyira nehez
+        double lo=l, hi=r+eps, mid;
+        while (hi-lo>eps) {
+            mid=(hi+lo)/2;
+            double val1=(xa*(r-mid)+ya*(mid-l))/(r-l), val2=(xb*(r-mid)+yb*(mid-l))/(r-l);
+            double area=(xb-xa+val2-val1)*(mid-lo)/2;
+            if (area<=buffer) {
+                lo=mid;
+            } else {
+                hi=mid;
+            }
+        }
+        double val1=(xa*(r-lo)+ya*(lo-l))/(r-l), val2=(xb*(r-lo)+yb*(lo-l))/(r-l);
+            double area=(xb-xa+val2-val1)*(lo-lo)/2;
+        if (l+eps<lo) {
+            buffer-=area;
+            res.push_back({l, lo, xb, val2});
+        }
+        if (lo+eps<r) {
+            res.push_back({lo, r, val1, ya});
+        }
+
     }
 }
 vector<line> combine(vector<line> a, vector<line> b) {
-    // TODO
     double buffer=0;
     vector<line> res;
 
@@ -142,6 +160,8 @@ vector<line> find_prev(vector<line> a, vector<line> b) {
     vector<line> res=combine(b, a);
     mirror(res);
 }
+
+
 void modify(vector<line> a, vector<line> b, int val) {
     vector<line> res;
     int sa=a.size(), sb=b.size();
@@ -272,12 +292,7 @@ int main()
             modify(graph[b][a], edge_functions[i], 1);
         }
     }
+    cout << ans << "\n";
     return 0;
 }
-/*
-altalanosan
-egy utra mi a legjobb, amit ki tudunk hozni
-egy utra sok ertelmes kerdes
-*/
-
 

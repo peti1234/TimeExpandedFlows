@@ -17,7 +17,17 @@ vector<line> graph[maxn][maxn];
 
 double ans;
 
-
+void compress(vector<line> &v) {
+    // az egy vonalon levoket is ossze lehetne vonni
+    vector<line> v2;
+    for (auto p:v) {
+        if (p.x+eps>p.y || (p.l<eps && p.r<eps)) {
+            continue;
+        }
+        v2.push_back(p);
+    }
+    v=v2;
+}
 
 double get_integral(vector<line> &v) {
     double ans=0;
@@ -67,6 +77,7 @@ void special_case(double l, double r, double xa, double ya, double xb, double yb
     }
 }
 void print(vector<line> v) {
+    //cout << "allas\n";
     for (auto p:v) {
         cout << p.l << " " << p.r << " " << p.x << " " << p.y << "\n";
     }
@@ -83,12 +94,14 @@ vector<line> combine(vector<line> a, vector<line> b) {
     while (i<sa || j<sb) {
         double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
         double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
+        //cout << "alap " << la << " " << ra << " " << lb << " " << rb << "\n";
         if (abs(la-lb)<eps) {
             if (abs(lb-rb)<eps) {
                 i++, j++;
             }
             else if (ra+eps<rb) {
                 double midval=eval(b[j], ra);
+                //cout << "fontos " << ra << " " << rb << " " << midval << " " << yb << "\n";
                 b[j]={ra, rb, midval, yb};
                 yb=midval;
                 i++;
@@ -101,6 +114,7 @@ vector<line> combine(vector<line> a, vector<line> b) {
             }
             ra=min(ra, rb), rb=min(ra, rb);
             bool p=(xa>=xb), q=(ya>=yb);
+            //cout << "allas " << p << " " << q << "\n";
             if (p==q) {
                 special_case(la, ra, xa, ya, xb, yb, buffer, res);
             } else {
@@ -109,6 +123,7 @@ vector<line> combine(vector<line> a, vector<line> b) {
                 special_case(la, midpoint, xa, midval, xb, midval, buffer, res);
                 special_case(midpoint, ra, midval, ya, midval, yb, buffer, res);
             }
+            //cout << "vege " << buffer << "\n";
         }
         else if (la<lb) {
             // integralhoz hozza kell adni a maradekot
@@ -122,6 +137,7 @@ vector<line> combine(vector<line> a, vector<line> b) {
             }
         }
         else {
+            //cout << "fontos " << la << " " << ra << " " << lb << " " << rb << " " << buffer << "\n";
             // addig kell kivalasztani, amig belefer a limitbe
             double m=(yb-xb)/(rb-lb);
             double lo=lb, hi=min(rb, la)+eps, mid;
@@ -134,7 +150,7 @@ vector<line> combine(vector<line> a, vector<line> b) {
                     hi=mid;
                 }
             }
-            if (lo-ra>eps) {
+            if (lo-lb>eps) {
                 double area=(xb+xb+m*(lo-lb))*(lo-lb)/2;
                 buffer-=area;
                 res.push_back({lb, lo, xb, xb+m*(lo-lb)});
@@ -150,6 +166,9 @@ vector<line> combine(vector<line> a, vector<line> b) {
     return res;
 }
 vector<line> find_next(vector<line> a, vector<line> b) {
+    //cout << "find_next:\n";
+    //print(a);
+    //print(b);
     return combine(a, b);
 }
 void mirror(vector<line> &a) {
@@ -157,19 +176,42 @@ void mirror(vector<line> &a) {
     for (int i=0; i<si; i++) {
         double ll=a[i].l, rr=a[i].r;
         a[i].l=-rr, a[i].r=-ll;
+        double xx=a[i].x, yy=a[i].y;
+        a[i].x=yy, a[i].y=xx;
     }
     reverse(a.begin(), a.end());
 }
 vector<line> find_prev(vector<line> a, vector<line> b) {
+    /*cout << "find_prev\n";
+    print(a);
+    print(b);*/
+
     mirror(a);
     mirror(b);
+
+    /*cout << "tukrozve\n";
+    print(a);
+    print(b);*/
     vector<line> res=combine(b, a);
+    /*cout << "res tukrozve\n";
+    print(res);*/
+
+
     mirror(res);
+    /*cout << "valasz\n";
+    print(res);*/
     return res;
 }
 
 
-void modify(vector<line> a, vector<line> b, int val) {
+void modify(vector<line> &a, vector<line> b, int val) {
+    /*cout << "modify " << val << "\n";
+    print(a);
+    cout << "\n";
+    print(b);
+    cout << "\n";
+    cout << "nem modositja\n";
+    return;*/
     vector<line> res;
     int sa=a.size(), sb=b.size();
     a.push_back(close_line), b.push_back(close_line);
@@ -226,11 +268,20 @@ void modify(vector<line> a, vector<line> b, int val) {
             }
         }
     }
+    a=res;
+    /*cout << "valasz\n";
+    print(res);*/
+    compress(a);
     return;
 }
 
 int main()
-{   
+{
+    /*line a={3, 7, 6, 10}, b={1, 10, 2, 2};
+    vector<line> aa={a}, bb={b};
+    print(combine(aa, bb));*/
+    //print(aa);
+    //exit(0);
     cin >> n;
     int linecnt;
     cin >> linecnt;
@@ -245,7 +296,6 @@ int main()
         graph[a][b].push_back({l, r, x, y});
         graph[b][a].push_back({l, r, x, y});
     }
-
     while (true) {
         vector<bool> is_visited(n+1, 0);
         vector<int> prev(n+1, 0);
@@ -272,7 +322,16 @@ int main()
             }
         }
 
+
+        //print(f[2]);
+        //print(f[3]);
+        //exit(0);
+        //print(f[4]);
+
+        //print(f[n]);
+        //cout << "hossz: " << get_integral(f[n]) << "\n";
         if (get_integral(f[n])<eps) { // nagyon kicsi az integral, vagy sok ut, vagy barmi mas
+            cout << "vege\n";
             break;
         }
         vector<int> path;
@@ -282,16 +341,27 @@ int main()
             tmp=prev[tmp];
             path.push_back(tmp);
         }
+        reverse(path.begin(), path.end());
         int pathlen=path.size();
         vector<vector<line> > edge_functions(pathlen);
         edge_functions[pathlen-1]=f[n];
 
+        
+
         for (int i=pathlen-2; i>=1; i--) {
+            //print(graph[path[i-1]][path[i]]);
             edge_functions[i]=find_prev(graph[path[i-1]][path[i]], edge_functions[i+1]);
+            //print(edge_functions[i]);
         }
+        //exit(0);
         for (int i=2; i<pathlen; i++) {
-            edge_functions[i]=find_next(graph[path[i-1]][path[i]], edge_functions[i-1]);
+            edge_functions[i]=find_next(edge_functions[i-1], graph[path[i-1]][path[i]]);
         }
+
+        //print(edge_functions[pathlen-1]);
+        //exit(0);
+
+
         ans+=get_integral(f[n]);
 
         for (int i=1; i<pathlen; i++) {
@@ -301,7 +371,6 @@ int main()
         }
 
 
-        reverse(path.begin(), path.end());
 
         cout << "ut: ";
         for (auto x:path) {

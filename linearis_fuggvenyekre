@@ -90,7 +90,6 @@ vector<line> combine(vector<line> a, vector<line> b) {
     a.push_back(close_line), b.push_back(close_line);
     int i=0, j=0;
 
-    int it=0;
     while (i<sa || j<sb) {
         double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
         double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
@@ -205,13 +204,6 @@ vector<line> find_prev(vector<line> a, vector<line> b) {
 
 
 void modify(vector<line> &a, vector<line> b, int val) {
-    /*cout << "modify " << val << "\n";
-    print(a);
-    cout << "\n";
-    print(b);
-    cout << "\n";
-    cout << "nem modositja\n";
-    return;*/
     vector<line> res;
     int sa=a.size(), sb=b.size();
     a.push_back(close_line), b.push_back(close_line);
@@ -228,7 +220,7 @@ void modify(vector<line> &a, vector<line> b, int val) {
 
         if (abs(la-lb)<eps) {
             if (abs(ra-rb)<eps) {
-                res.push_back({ra, rb, xa+xb, ya+yb});
+                res.push_back({la, ra, xa+xb, ya+yb});
                 i++;
                 j++;
             }
@@ -240,7 +232,7 @@ void modify(vector<line> &a, vector<line> b, int val) {
             }
             else {
                 double midval=eval(b[j], ra);
-                res.push_back({la, ra, xa+xb, midval+xb});
+                res.push_back({la, ra, xa+xb, midval+ya});
                 b[j]={ra, rb, midval, yb};
                 i++;
             }

@@ -2,7 +2,7 @@
 
 using namespace std;
 const int maxn=1005;
-const double eps=1e-6, inf=1e9;
+const double eps=1e-3, eps2=100*eps, inf=1e9;
 struct line {
     double l, r, x, y;
     bool operator<(const line& other) const {
@@ -21,14 +21,15 @@ void compress(vector<line> &v) {
     // az egy vonalon levoket is ossze lehetne vonni
     vector<line> v2;
     for (auto p:v) {
-        if (p.x+eps>p.y || (p.l<eps && p.r<eps)) {
+
+        if (p.l+2*eps>p.r || (p.x<eps && p.y<eps)) {
             continue;
         }
+
         v2.push_back(p);
     }
     v=v2;
 }
-
 double get_integral(vector<line> &v) {
     double ans=0;
     for (auto p:v) {
@@ -57,7 +58,7 @@ void special_case(double l, double r, double xa, double ya, double xb, double yb
         while (hi-lo>eps) {
             mid=(hi+lo)/2;
             double val1=(xa*(r-mid)+ya*(mid-l))/(r-l), val2=(xb*(r-mid)+yb*(mid-l))/(r-l);
-            double area=(xb-xa+val2-val1)*(mid-lo)/2;
+            double area=(xb-xa+val2-val1)*(mid-l)/2;
             if (area<=buffer) {
                 lo=mid;
             } else {
@@ -65,7 +66,7 @@ void special_case(double l, double r, double xa, double ya, double xb, double yb
             }
         }
         double val1=(xa*(r-lo)+ya*(lo-l))/(r-l), val2=(xb*(r-lo)+yb*(lo-l))/(r-l);
-            double area=(xb-xa+val2-val1)*(lo-lo)/2;
+        double area=(xb-xa+val2-val1)*(lo-l)/2;
         if (l+eps<lo) {
             buffer-=area;
             res.push_back({l, lo, xb, val2});
@@ -82,7 +83,9 @@ void print(vector<line> v) {
         cout << p.l << " " << p.r << " " << p.x << " " << p.y << "\n";
     }
 }
+
 vector<line> combine(vector<line> a, vector<line> b) {
+    //cout << "alap:\n";
     double buffer=0;
     vector<line> res;
 
@@ -93,14 +96,13 @@ vector<line> combine(vector<line> a, vector<line> b) {
     while (i<sa || j<sb) {
         double la=a[i].l, ra=a[i].r, xa=a[i].x, ya=a[i].y;
         double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
-        //cout << "alap " << la << " " << ra << " " << lb << " " << rb << "\n";
         if (abs(la-lb)<eps) {
-            if (abs(lb-rb)<eps) {
+            la=max(la, lb), lb=max(la, lb);
+            if (abs(ra-rb)<eps) {
                 i++, j++;
             }
             else if (ra+eps<rb) {
                 double midval=eval(b[j], ra);
-                //cout << "fontos " << ra << " " << rb << " " << midval << " " << yb << "\n";
                 b[j]={ra, rb, midval, yb};
                 yb=midval;
                 i++;
@@ -113,7 +115,6 @@ vector<line> combine(vector<line> a, vector<line> b) {
             }
             ra=min(ra, rb), rb=min(ra, rb);
             bool p=(xa>=xb), q=(ya>=yb);
-            //cout << "allas " << p << " " << q << "\n";
             if (p==q) {
                 special_case(la, ra, xa, ya, xb, yb, buffer, res);
             } else {
@@ -122,7 +123,6 @@ vector<line> combine(vector<line> a, vector<line> b) {
                 special_case(la, midpoint, xa, midval, xb, midval, buffer, res);
                 special_case(midpoint, ra, midval, ya, midval, yb, buffer, res);
             }
-            //cout << "vege " << buffer << "\n";
         }
         else if (la<lb) {
             // integralhoz hozza kell adni a maradekot
@@ -136,8 +136,6 @@ vector<line> combine(vector<line> a, vector<line> b) {
             }
         }
         else {
-            //cout << "fontos " << la << " " << ra << " " << lb << " " << rb << " " << buffer << "\n";
-            // addig kell kivalasztani, amig belefer a limitbe
             double m=(yb-xb)/(rb-lb);
             double lo=lb, hi=min(rb, la)+eps, mid;
             while (hi-lo>eps) {
@@ -149,6 +147,7 @@ vector<line> combine(vector<line> a, vector<line> b) {
                     hi=mid;
                 }
             }
+            lo=min({lo, rb, la});
             if (lo-lb>eps) {
                 double area=(xb+xb+m*(lo-lb))*(lo-lb)/2;
                 buffer-=area;
@@ -162,12 +161,10 @@ vector<line> combine(vector<line> a, vector<line> b) {
             }
         }
     }
+    compress(res);
     return res;
 }
 vector<line> find_next(vector<line> a, vector<line> b) {
-    //cout << "find_next:\n";
-    //print(a);
-    //print(b);
     return combine(a, b);
 }
 void mirror(vector<line> &a) {
@@ -181,29 +178,17 @@ void mirror(vector<line> &a) {
     reverse(a.begin(), a.end());
 }
 vector<line> find_prev(vector<line> a, vector<line> b) {
-    /*cout << "find_prev\n";
-    print(a);
-    print(b);*/
 
     mirror(a);
     mirror(b);
 
-    /*cout << "tukrozve\n";
-    print(a);
-    print(b);*/
     vector<line> res=combine(b, a);
-    /*cout << "res tukrozve\n";
-    print(res);*/
-
 
     mirror(res);
-    /*cout << "valasz\n";
-    print(res);*/
     return res;
 }
-
-
 void modify(vector<line> &a, vector<line> b, int val) {
+    vector<line> alapa=a, alapb=b;
     vector<line> res;
     int sa=a.size(), sb=b.size();
     a.push_back(close_line), b.push_back(close_line);
@@ -219,7 +204,9 @@ void modify(vector<line> &a, vector<line> b, int val) {
         double lb=b[j].l, rb=b[j].r, xb=b[j].x, yb=b[j].y;
 
         if (abs(la-lb)<eps) {
+            la=max(la, lb), lb=max(la, lb);
             if (abs(ra-rb)<eps) {
+                ra=min(ra, rb), rb=min(ra, rb);
                 res.push_back({la, ra, xa+xb, ya+yb});
                 i++;
                 j++;
@@ -248,32 +235,35 @@ void modify(vector<line> &a, vector<line> b, int val) {
             }
         }
         else {
-            assert(la>lb);
-            assert(val==1);
+            //assert(val==1);
             if (rb<=la) {
                 res.push_back(b[j]);
                 j++;
             } else {
                 double midval=eval(b[j], la);
                 res.push_back({lb, la, xb, midval});
+                /*if ((xb<0 || midval<0) && (la-lb)>2*eps) { // a sajat tesztjeimben nem tortenik meg
+                    cout << "baj\n";
+                    cout << xb << " " << midval << " " << lb << " " << la << "\n";
+
+                    print(alapa);
+                    print(alapb);
+                    exit(0);
+                }*/
                 b[j]={la, rb, midval, yb};
             }
         }
     }
     a=res;
-    /*cout << "valasz\n";
-    print(res);*/
     compress(a);
     return;
 }
 
 int main()
 {
-    /*line a={3, 7, 6, 10}, b={1, 10, 2, 2};
-    vector<line> aa={a}, bb={b};
-    print(combine(aa, bb));*/
-    //print(aa);
-    //exit(0);
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+
     cin >> n;
     int linecnt;
     cin >> linecnt;
@@ -283,6 +273,7 @@ int main()
         if (graph[a][b].size()==0) {
             adj[a].push_back(b), adj[b].push_back(a);
         }
+
         double l, r, x, y;
         cin >> l >> r >> x >> y;
         graph[a][b].push_back({l, r, x, y});
@@ -314,15 +305,7 @@ int main()
             }
         }
 
-
-        //print(f[2]);
-        //print(f[3]);
-        //exit(0);
-        //print(f[4]);
-
-        //print(f[n]);
-        //cout << "hossz: " << get_integral(f[n]) << "\n";
-        if (get_integral(f[n])<eps) { // nagyon kicsi az integral, vagy sok ut, vagy barmi mas
+        if (get_integral(f[n])<eps2) { // nagyon kicsi az integral, vagy sok ut, vagy barmi mas
             cout << "vege\n";
             break;
         }
@@ -338,24 +321,16 @@ int main()
         vector<vector<line> > edge_functions(pathlen);
         edge_functions[pathlen-1]=f[n];
 
-        
-
         for (int i=pathlen-2; i>=1; i--) {
-            //print(graph[path[i-1]][path[i]]);
             edge_functions[i]=find_prev(graph[path[i-1]][path[i]], edge_functions[i+1]);
-            //print(edge_functions[i]);
         }
-        //exit(0);
         for (int i=2; i<pathlen; i++) {
             edge_functions[i]=find_next(edge_functions[i-1], graph[path[i-1]][path[i]]);
         }
 
-        //print(edge_functions[pathlen-1]);
-        //exit(0);
 
 
         ans+=get_integral(f[n]);
-
         for (int i=1; i<pathlen; i++) {
             int a=path[i-1], b=path[i];
             modify(graph[a][b], edge_functions[i], -1);
@@ -370,12 +345,13 @@ int main()
         }
         cout << "\n";
 
+
         for (int i=pathlen-1; i>=1; i--) {
             cout << "lepes\n";
             print(edge_functions[i]);
         }
 
-        exit(0);
+        //exit(0); akkor kell, ha csak egy utat keresunk
     }
     return 0;
 }
